@@ -7,6 +7,7 @@ import { AudioManager } from "./audioManager.js";
 import { RECIPES, ITEM_ICONS } from "./recipes.js";
 import { GAME_CONFIG } from "./config/gameConfig.js";
 import { KITCHEN_LAYOUT } from "./layouts/kitchenLayout.js";
+import { calculateUpgradeEffects, createDefaultProgress, loadProgress, saveProgress } from "./progression.js";
 
 const PROCESS_TO_STATE = {
   cook: "cooked",
@@ -31,10 +32,12 @@ export class Game {
     this.assets = assets;
     this.renderer = new Renderer(canvas, hudRefs, config, assets);
     this.audio = new AudioManager();
+    this.progress = loadProgress(config);
 
     this.state = "menu";
     this.score = 0;
     this.completedOrders = 0;
+    this.hurma = this.progress.totalHurma;
     this.mainTimer = config.match.durationMs;
 
     this.dayPhase = config.cycle.initialPhase;
@@ -59,6 +62,8 @@ export class Game {
     this.worldH = this.canvas.height;
     this.worldScale = 1;
     this.layoutTransform = this.computeLayoutTransform(this.worldW, this.worldH);
+    this.upgradeEffects = calculateUpgradeEffects(this.config, this.progress.upgrades);
+    this.bestComboThisRun = 0;
 
     this.stations = this.createStations();
     this.player = this.createPlayer(this.worldW, this.worldH);
@@ -68,14 +73,156 @@ export class Game {
       this.breakCombo();
       this.audio.playFail();
       this.notify(msg);
-    }, config);
+    }, config, this.getOrderModifiers());
     this.orderManager.setCyclePhase(this.dayPhase);
 
     this.notificationTimer = 0;
     this.lastTime = 0;
     this.running = false;
 
+    this.applySettings();
     this.bindInput();
+  }
+
+  getOrderModifiers() {
+    return {
+      maxOrders: this.config.orders.maxActive,
+      orderTimeMultiplier: this.upgradeEffects.orderTimeMultiplier
+    };
+  }
+
+  applySettings() {
+    this.audio.enabled = this.progress.settings.soundEnabled;
+  }
+
+  persistProgress() {
+    saveProgress(this.config, this.progress);
+  }
+
+  refreshUpgradeEffects() {
+    this.upgradeEffects = calculateUpgradeEffects(this.config, this.progress.upgrades);
+    this.hurma = this.progress.totalHurma;
+
+    if (this.player) {
+      this.player.speed = this.config.player.speed * this.worldScale * this.upgradeEffects.playerSpeedMultiplier;
+    }
+    if (this.orderManager) {
+      this.orderManager.maxOrders = this.config.orders.maxActive;
+      this.orderManager.orderTimeMultiplier = this.upgradeEffects.orderTimeMultiplier;
+    }
+  }
+
+  finalizeRunProgress() {
+    let changed = false;
+    if (this.score > this.progress.highScore) {
+      this.progress.highScore = this.score;
+      changed = true;
+    }
+    if (this.bestComboThisRun > this.progress.bestCombo) {
+      this.progress.bestCombo = this.bestComboThisRun;
+      changed = true;
+    }
+    if (changed) this.persistProgress();
+  }
+
+  getUpgradeCatalog() {
+    return this.config.upgrades.catalog.map((upgrade) => {
+      const level = this.progress.upgrades[upgrade.id] || 0;
+      const next = upgrade.levels[level] || null;
+      return {
+        ...upgrade,
+        level,
+        maxLevel: upgrade.levels.length,
+        nextCost: next?.cost || null,
+        isMaxed: level >= upgrade.levels.length
+      };
+    });
+  }
+
+  purchaseUpgrade(id) {
+    if (!["menu", "paused", "gameOver", "levelComplete"].includes(this.state)) {
+      return { success: false, message: "Yukseltmeler icin oyunu duraklat" };
+    }
+
+    const upgrade = this.config.upgrades.catalog.find((item) => item.id === id);
+    if (!upgrade) return { success: false, message: "Yukseltme bulunamadi" };
+
+    const currentLevel = this.progress.upgrades[id] || 0;
+    const nextLevel = upgrade.levels[currentLevel];
+    if (!nextLevel) return { success: false, message: "Bu yukseltme zaten maksimum" };
+    if (this.progress.totalHurma < nextLevel.cost) return { success: false, message: "Yetersiz hurma" };
+
+    this.progress.totalHurma -= nextLevel.cost;
+    this.progress.upgrades[id] = currentLevel + 1;
+    this.refreshUpgradeEffects();
+    this.persistProgress();
+    this.notify(`${upgrade.name} Lv.${currentLevel + 1} oldu`);
+    return { success: true, message: `${upgrade.name} gelistirildi` };
+  }
+
+  resetProgress() {
+    this.progress = createDefaultProgress(this.config);
+    this.applySettings();
+    this.refreshUpgradeEffects();
+    this.persistProgress();
+    this.notify("Kayitli ilerleme sifirlandi");
+  }
+
+  toggleSound() {
+    this.progress.settings.soundEnabled = !this.progress.settings.soundEnabled;
+    this.applySettings();
+    this.persistProgress();
+    if (this.progress.settings.soundEnabled) {
+      this.audio.playMenuStart();
+    }
+  }
+
+  togglePause() {
+    if (this.state === "playing") {
+      this.state = "paused";
+      this.notify("Oyun duraklatildi");
+      return true;
+    }
+
+    if (this.state === "paused") {
+      this.state = "playing";
+      this.notify("Oyun devam ediyor");
+      return true;
+    }
+
+    return false;
+  }
+
+  getPhaseConfig(phase = this.dayPhase) {
+    return this.config.cycle.phases[phase] || this.config.cycle.phases[this.config.cycle.initialPhase];
+  }
+
+  getStatusText() {
+    if (this.state === "levelComplete") {
+      return {
+        title: "SERVIS TAMAMLANDI",
+        subtitle: `Skor ${this.score} • ${this.completedOrders} siparis teslim edildi • ${this.hurma} hurma`,
+        action: "Tekrar oynamak icin Enter veya R"
+      };
+    }
+
+    if (this.state === "paused") {
+      return {
+        title: "DURAKLATILDI",
+        subtitle: `Skor ${this.score} • ${this.completedOrders} siparis • ${this.hurma} hurma`,
+        action: "Devam icin Esc veya paneldeki tusu kullan"
+      };
+    }
+
+    if (this.state === "gameOver") {
+      return {
+        title: "VAKIT DOLDU",
+        subtitle: `Skor ${this.score} • ${this.completedOrders} siparis tamamlandi • ${this.hurma} hurma`,
+        action: "Yeniden baslatmak icin Enter veya R"
+      };
+    }
+
+    return null;
   }
 
   computeLayoutTransform(width, height) {
@@ -105,7 +252,7 @@ export class Game {
 
     const player = new Player(x, y);
     player.radius = this.config.player.radius * scale;
-    player.speed = this.config.player.speed * scale;
+    player.speed = this.config.player.speed * scale * this.upgradeEffects.playerSpeedMultiplier;
     player.interactRange = this.config.player.interactRange * scale;
     return player;
   }
@@ -155,7 +302,7 @@ export class Game {
     this.player.x = (this.player.x / prevW) * this.worldW;
     this.player.y = (this.player.y / prevH) * this.worldH;
     this.player.radius = this.config.player.radius * this.worldScale;
-    this.player.speed = this.config.player.speed * this.worldScale;
+    this.player.speed = this.config.player.speed * this.worldScale * this.upgradeEffects.playerSpeedMultiplier;
     this.player.interactRange = this.config.player.interactRange * this.worldScale;
   }
 
@@ -165,15 +312,22 @@ export class Game {
       this.keys[e.code] = true;
 
       if (e.code === "Enter") {
-        if (this.state === "menu" || this.state === "levelComplete") {
+        if (this.state === "menu" || this.state === "levelComplete" || this.state === "gameOver") {
           this.startRun();
           this.audio.playMenuStart();
         }
       }
 
-      if (e.code === "KeyR" && this.state === "gameOver") {
+      if (e.code === "KeyR" && this.state !== "playing") {
         this.startRun();
         this.audio.playMenuStart();
+      }
+
+      if (e.code === "Escape") {
+        if (this.state === "playing" || this.state === "paused") {
+          e.preventDefault();
+          this.togglePause();
+        }
       }
 
       if (e.code === "KeyE" || e.code === "Space") {
@@ -205,6 +359,7 @@ export class Game {
     this.comboCount = 0;
     this.comboTimer = 0;
     this.comboMultiplier = 1;
+    this.bestComboThisRun = 0;
 
     this.player = this.createPlayer(this.worldW, this.worldH);
     this.stations = this.createStations();
@@ -214,10 +369,10 @@ export class Game {
       this.breakCombo();
       this.audio.playFail();
       this.notify(msg);
-    }, this.config);
+    }, this.config, this.getOrderModifiers());
     this.orderManager.setCyclePhase(this.dayPhase);
 
-    this.notify("Iftar hazirligi basladi!");
+    this.notify(this.getPhaseConfig().notify);
   }
 
   updateCycle(delta) {
@@ -226,6 +381,7 @@ export class Game {
       this.phaseTimer = 0;
       this.dayPhase = this.dayPhase === "iftar" ? "sahur" : "iftar";
       this.orderManager.setCyclePhase(this.dayPhase);
+      this.notify(this.getPhaseConfig().notify);
     }
   }
 
@@ -248,6 +404,11 @@ export class Game {
     }
     this.comboTimer = this.comboWindowMs;
     this.comboMultiplier = 1 + Math.min(this.comboCount - 1, 6) * 0.15;
+    this.bestComboThisRun = Math.max(this.bestComboThisRun, this.comboCount);
+    if (this.bestComboThisRun > this.progress.bestCombo) {
+      this.progress.bestCombo = this.bestComboThisRun;
+      this.persistProgress();
+    }
   }
 
   handleInteract() {
@@ -269,11 +430,19 @@ export class Game {
       this.registerCombo();
 
       const comboBonus = Math.round(result.served.total * (this.comboMultiplier - 1));
-      const totalAward = result.served.total + comboBonus;
+      const totalAward = Math.round((result.served.total + comboBonus) * this.upgradeEffects.scoreMultiplier);
+      const hurmaGain = Math.max(
+        1,
+        Math.round((this.config.economy.hurmaPerOrder + result.served.tip * 0.08) * this.upgradeEffects.hurmaMultiplier)
+      );
       this.score += totalAward;
       this.completedOrders += 1;
+      this.progress.totalHurma += hurmaGain;
+      this.progress.lifetimeHurma += hurmaGain;
+      this.hurma = this.progress.totalHurma;
+      this.persistProgress();
 
-      this.notify(`Harika servis! +${totalAward} puan`);
+      this.notify(`Harika servis! +${totalAward} puan • +${hurmaGain} hurma`);
 
       const service = this.stations.find((s) => s.type === "service");
       if (service) {
@@ -284,6 +453,10 @@ export class Game {
           text: `+${totalAward} puan`,
           color: "#f6de92"
         });
+        this.particles.emit("popup", sx, sy + 4, {
+          text: `+${hurmaGain} hurma`,
+          color: "#9fe082"
+        });
       }
 
       this.audio.playServe(this.comboMultiplier);
@@ -291,6 +464,7 @@ export class Game {
 
       if (this.completedOrders >= this.config.match.levelCompleteOrders) {
         this.state = "levelComplete";
+        this.finalizeRunProgress();
         this.notify("Seviye tamamlandi!");
       }
     }
@@ -312,7 +486,7 @@ export class Game {
       const wasState = station.state;
 
       const holdActive = station.type === "chopping" ? station === holdChopStation : true;
-      station.update(delta, holdActive);
+      station.update(delta, holdActive, this.upgradeEffects.processSpeedMultiplier);
 
       if (holdActive && station.type === "chopping" && station.state === "processing") {
         this.lastChopSoundMs += delta;
@@ -420,6 +594,7 @@ export class Game {
       this.state = "gameOver";
       this.audio.playFail();
       this.notify("Vakit doldu!");
+      this.finalizeRunProgress();
     }
   }
 

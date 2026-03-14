@@ -35,7 +35,7 @@ export class Station {
     this.h = h;
   }
 
-  update(delta, holdActive = true) {
+  update(delta, holdActive = true, speedMultiplier = 1) {
     if (this.state !== "processing") {
       return;
     }
@@ -44,7 +44,7 @@ export class Station {
       return;
     }
 
-    this.timer += delta;
+    this.timer += delta * speedMultiplier;
     if (this.duration > 0) {
       this.progress = Math.min(this.timer / this.duration, 1);
     }

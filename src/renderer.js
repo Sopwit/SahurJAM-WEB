@@ -228,6 +228,9 @@ export class Renderer {
     const phaseCfg = this.config.cycle.phases[game.dayPhase] || this.config.cycle.phases.iftar;
     this.hud.cycle.textContent = `DONGU: ${phaseCfg.label} (${phaseLeft}s)`;
     this.hud.cycle.style.color = phaseCfg.hudColor;
+    if (this.hud.runStats) {
+      this.hud.runStats.textContent = `Teslimat ${game.completedOrders}/${this.config.match.levelCompleteOrders} • Hurma ${game.hurma}`;
+    }
 
     const ordersHtml = game.orderManager.activeOrders
       .map((order) => {
@@ -247,6 +250,62 @@ export class Renderer {
       .join("");
 
     this.hud.orders.innerHTML = ordersHtml;
+
+    if (this.hud.controls) {
+      this.hud.controls.textContent =
+        game.state === "playing"
+          ? "WASD / Ok tuslari ile hareket et • E veya Bosluk ile etkilesim kur • Escape ile duraklat"
+          : "Enter veya buton ile baslat • R ile yeniden baslat • Escape ile ara ver";
+    }
+
+    if (this.hud.hurma) this.hud.hurma.textContent = String(game.progress.totalHurma);
+    if (this.hud.highScore) this.hud.highScore.textContent = String(game.progress.highScore);
+    if (this.hud.bestCombo) this.hud.bestCombo.textContent = `x${game.progress.bestCombo}`;
+    if (this.hud.soundButton) {
+      this.hud.soundButton.textContent = game.progress.settings.soundEnabled ? "SES: ACIK" : "SES: KAPALI";
+    }
+    if (this.hud.pauseButton) {
+      this.hud.pauseButton.textContent = game.state === "paused" ? "DEVAM ET" : "DURAKLAT";
+    }
+    if (this.hud.upgrades) {
+      this.hud.upgrades.innerHTML = game
+        .getUpgradeCatalog()
+        .map((upgrade) => {
+          const current = upgrade.level;
+          const disabled = upgrade.isMaxed || !["menu", "paused", "gameOver", "levelComplete"].includes(game.state);
+          return `
+            <article class="upgrade-card ${upgrade.isMaxed ? "maxed" : ""}">
+              <div class="upgrade-head">
+                <h3>${upgrade.name}</h3>
+                <span>Lv.${current}/${upgrade.maxLevel}</span>
+              </div>
+              <p>${upgrade.description}</p>
+              <button type="button" data-upgrade-id="${upgrade.id}" ${disabled ? "disabled" : ""}>
+                ${upgrade.isMaxed ? "Maksimum" : `${upgrade.nextCost} hurma ile al`}
+              </button>
+            </article>
+          `;
+        })
+        .join("");
+    }
+
+    if (this.hud.status) {
+      const status = game.getStatusText();
+      if (status) {
+        this.hud.status.innerHTML = `
+          <div class="status-card">
+            <div class="status-kicker">Iftar Vakti</div>
+            <h2>${status.title}</h2>
+            <p>${status.subtitle}</p>
+            <span>${status.action}</span>
+          </div>
+        `;
+        this.hud.status.classList.add("visible");
+      } else {
+        this.hud.status.innerHTML = "";
+        this.hud.status.classList.remove("visible");
+      }
+    }
   }
 
   draw(game) {

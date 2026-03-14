@@ -4,10 +4,11 @@ import { GAME_CONFIG } from "./config/gameConfig.js";
 const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
 
 export class OrderManager {
-  constructor(onExpire, config = GAME_CONFIG) {
+  constructor(onExpire, config = GAME_CONFIG, modifiers = {}) {
     this.config = config;
     this.activeOrders = [];
-    this.maxOrders = config.orders.maxActive;
+    this.maxOrders = modifiers.maxOrders || config.orders.maxActive;
+    this.orderTimeMultiplier = modifiers.orderTimeMultiplier || 1;
     this.nextId = 1;
     this.spawnTimer = 0;
     this.spawnCooldown = 0;
@@ -18,6 +19,7 @@ export class OrderManager {
     this.phaseTipMultiplier = 2.0;
     this.currentPhase = config.cycle.initialPhase;
 
+    this.setCyclePhase(this.currentPhase);
     this.spawnOrder();
     this.resetSpawnCooldown();
   }
@@ -29,6 +31,10 @@ export class OrderManager {
 
   setCyclePhase(phase) {
     this.currentPhase = phase;
+    const phaseConfig = this.config.cycle.phases[phase] || this.config.cycle.phases[this.config.cycle.initialPhase];
+    this.spawnMin = phaseConfig.orders.spawnMinMs;
+    this.spawnMax = phaseConfig.orders.spawnMaxMs;
+    this.phaseTipMultiplier = phaseConfig.orders.tipMultiplier;
   }
 
   update(delta) {
@@ -65,7 +71,7 @@ export class OrderManager {
     const order = {
       id: this.nextId++,
       recipe,
-      timeLimit: this.config.orders.timeLimitMs,
+      timeLimit: Math.round(this.config.orders.timeLimitMs * this.orderTimeMultiplier),
       elapsed: 0,
       tipMultiplier: this.phaseTipMultiplier
     };

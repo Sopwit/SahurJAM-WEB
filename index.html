@@ -8,6 +8,34 @@
   </head>
   <body>
     <div id="gameContainer">
+      <aside id="metaPanel" class="meta-panel">
+        <div class="panel-section">
+          <div class="panel-kicker">Ilerleme</div>
+          <div class="meta-stats">
+            <div class="meta-stat"><span>Hurma</span><strong id="hurmaCount">0</strong></div>
+            <div class="meta-stat"><span>En Yuksek Skor</span><strong id="highScore">0</strong></div>
+            <div class="meta-stat"><span>En Iyi Kombo</span><strong id="bestCombo">0</strong></div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-kicker">Yukseltmeler</div>
+          <div id="upgradeList" class="upgrade-list"></div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-kicker">Kontroller</div>
+          <div class="guide-list">
+            <div>WASD / Ok tuslari: hareket</div>
+            <div>E / Bosluk: etkilesim</div>
+            <div>Escape: duraklat</div>
+            <div>Dograma icin tusu basili tut</div>
+          </div>
+        </div>
+        <div class="panel-section panel-actions">
+          <button id="pauseButton" type="button">DURAKLAT</button>
+          <button id="soundButton" type="button">SES: ACIK</button>
+          <button id="resetProgressButton" type="button">ILERLEMEYI SIFIRLA</button>
+        </div>
+      </aside>
       <div id="startScreen" class="start-screen">
         <div class="start-bg"></div>
         <div class="start-overlay"></div>
@@ -15,6 +43,11 @@
           <div class="start-tag">Cooking Management • Ramazan Special</div>
           <h1 class="start-title">IFTAR<br />VAKTI</h1>
           <p class="start-subtitle">Ezan calmadan once herkesi doyur</p>
+          <div class="start-features">
+            <span>🌴 Kalici hurma ekonomisi</span>
+            <span>⚡ Yukseltme sistemi</span>
+            <span>⏸ Pause ve ses ayarlari</span>
+          </div>
           <button id="startButton" class="start-button" type="button">OYUNA BASLA</button>
         </div>
       </div>
@@ -24,8 +57,11 @@
         <div id="combo"></div>
         <div id="timer">03:00</div>
         <div id="cycle">DONGU: IFTAR</div>
+        <div id="runStats"></div>
         <div id="orders"></div>
+        <div id="controls"></div>
         <div id="notifications"></div>
+        <div id="statusOverlay" aria-live="polite"></div>
       </div>
     </div>
     <script type="module" src="src/main.js"></script>

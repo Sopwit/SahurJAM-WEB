@@ -28,6 +28,137 @@ body {
   height: 100vh;
 }
 
+.meta-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 30;
+  width: min(340px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 16px;
+  background: rgba(17, 11, 8, 0.9);
+  border: 1px solid rgba(200, 134, 10, 0.45);
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+}
+
+.panel-section + .panel-section {
+  margin-top: 16px;
+}
+
+.panel-kicker {
+  margin-bottom: 10px;
+  color: #f5c842;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.meta-stats {
+  display: grid;
+  gap: 10px;
+}
+
+.meta-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(245, 200, 66, 0.08);
+  border-radius: 12px;
+  color: #f5ede0;
+}
+
+.meta-stat span {
+  color: #d8bea2;
+  font-size: 13px;
+}
+
+.meta-stat strong {
+  color: #f5c842;
+  font-size: 20px;
+}
+
+.upgrade-list {
+  display: grid;
+  gap: 10px;
+}
+
+.upgrade-card {
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(40, 23, 13, 0.95), rgba(22, 13, 7, 0.95));
+  border: 1px solid rgba(200, 134, 10, 0.3);
+  border-radius: 14px;
+}
+
+.upgrade-card.maxed {
+  border-color: rgba(91, 211, 107, 0.45);
+}
+
+.upgrade-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.upgrade-head h3 {
+  margin: 0;
+  color: #f5ede0;
+  font-size: 18px;
+}
+
+.upgrade-head span {
+  color: #f5c842;
+  font-size: 12px;
+}
+
+.upgrade-card p {
+  margin: 8px 0 12px;
+  color: #d8bea2;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.upgrade-card button,
+.panel-actions button {
+  width: 100%;
+  border: 1px solid rgba(200, 134, 10, 0.55);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(200, 98, 42, 0.16);
+  color: #f5ede0;
+  font-family: Georgia, "Times New Roman", serif;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.upgrade-card button:hover,
+.panel-actions button:hover {
+  transform: translateY(-1px);
+  background: rgba(200, 98, 42, 0.28);
+}
+
+.upgrade-card button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+.guide-list {
+  display: grid;
+  gap: 8px;
+  color: #d8bea2;
+  font-size: 13px;
+}
+
+.panel-actions {
+  display: grid;
+  gap: 10px;
+}
+
 .start-screen {
   position: absolute;
   inset: 0;
@@ -45,10 +176,35 @@ body {
 .start-bg {
   position: absolute;
   inset: 0;
-  background-image: url("https://images.unsplash.com/photo-1773314863076-835e0bdbe3ea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1600");
-  background-size: cover;
-  background-position: center;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(245, 200, 66, 0.25), transparent 30%),
+    radial-gradient(circle at 80% 18%, rgba(255, 140, 70, 0.16), transparent 22%),
+    linear-gradient(180deg, rgba(59, 32, 17, 0.72) 0%, rgba(15, 8, 4, 0.92) 100%);
   transform: scale(1.06);
+}
+
+.start-bg::before,
+.start-bg::after {
+  content: "";
+  position: absolute;
+  inset: auto;
+  border-radius: 999px;
+  background: rgba(245, 200, 66, 0.08);
+  filter: blur(1px);
+}
+
+.start-bg::before {
+  width: 360px;
+  height: 360px;
+  left: -80px;
+  bottom: -140px;
+}
+
+.start-bg::after {
+  width: 420px;
+  height: 420px;
+  right: -100px;
+  top: -120px;
 }
 
 .start-overlay {
@@ -62,6 +218,7 @@ body {
   text-align: center;
   color: #f5ede0;
   padding: 24px;
+  max-width: min(900px, calc(100vw - 420px));
 }
 
 .start-tag {
@@ -90,6 +247,23 @@ body {
   margin: 16px 0 28px;
   font-size: clamp(20px, 3vw, 40px);
   color: #f5c842;
+}
+
+.start-features {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.start-features span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(245, 200, 66, 0.1);
+  border: 1px solid rgba(245, 200, 66, 0.25);
+  color: #f5ede0;
+  font-size: 14px;
 }
 
 .start-button {
@@ -167,6 +341,14 @@ canvas {
   text-shadow: 0 0 10px rgba(200, 134, 10, 0.45);
 }
 
+#runStats {
+  position: absolute;
+  right: 14px;
+  top: 40px;
+  color: #d8bea2;
+  font-size: 15px;
+}
+
 #orders {
   position: absolute;
   top: 62px;
@@ -236,6 +418,70 @@ canvas {
   animation: riseFade 1.6s ease forwards;
 }
 
+#controls {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  max-width: min(92vw, 820px);
+  padding: 8px 14px;
+  background: rgba(17, 11, 8, 0.72);
+  border: 1px solid rgba(200, 134, 10, 0.45);
+  border-radius: 999px;
+  color: #f2ddb0;
+  font-size: 14px;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+#statusOverlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(9, 5, 2, 0.45);
+}
+
+#statusOverlay.visible {
+  display: flex;
+}
+
+.status-card {
+  min-width: min(88vw, 460px);
+  padding: 28px 30px;
+  background: linear-gradient(180deg, rgba(35, 20, 10, 0.96), rgba(16, 9, 5, 0.96));
+  border: 2px solid rgba(232, 192, 48, 0.9);
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  text-align: center;
+  color: #f5ede0;
+}
+
+.status-kicker {
+  color: #f5c842;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.status-card h2 {
+  margin: 12px 0 10px;
+  font-size: clamp(30px, 5vw, 48px);
+  line-height: 1;
+}
+
+.status-card p {
+  margin: 0 0 10px;
+  color: #f0ddb4;
+  font-size: 18px;
+}
+
+.status-card span {
+  color: #d9b56d;
+  font-size: 14px;
+}
+
 @keyframes riseFade {
   from {
     opacity: 0;
@@ -251,5 +497,61 @@ canvas {
   to {
     opacity: 0;
     transform: translateY(-10px);
+  }
+}
+
+@media (max-width: 768px) {
+  .meta-panel {
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 12px;
+    width: auto;
+    max-height: 38vh;
+    z-index: 40;
+  }
+
+  .start-content {
+    max-width: calc(100vw - 32px);
+  }
+
+  #score,
+  #combo,
+  #timer,
+  #cycle {
+    font-size: 16px;
+  }
+
+  #timer {
+    top: 10px;
+    font-size: 26px;
+  }
+
+  #runStats {
+    top: 36px;
+    right: 12px;
+    font-size: 12px;
+  }
+
+  #orders {
+    top: 52px;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .order-card {
+    min-width: 140px;
+  }
+
+  #controls {
+    bottom: calc(38vh + 22px);
+    border-radius: 16px;
+    font-size: 12px;
+  }
+
+  #notifications {
+    bottom: calc(38vh + 8px);
+    font-size: 18px;
   }
 }

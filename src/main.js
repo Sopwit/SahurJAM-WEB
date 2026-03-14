@@ -10,8 +10,17 @@ const hudRefs = {
   combo: document.getElementById("combo"),
   timer: document.getElementById("timer"),
   cycle: document.getElementById("cycle"),
+  runStats: document.getElementById("runStats"),
   orders: document.getElementById("orders"),
-  notifications: document.getElementById("notifications")
+  notifications: document.getElementById("notifications"),
+  status: document.getElementById("statusOverlay"),
+  controls: document.getElementById("controls"),
+  hurma: document.getElementById("hurmaCount"),
+  highScore: document.getElementById("highScore"),
+  bestCombo: document.getElementById("bestCombo"),
+  upgrades: document.getElementById("upgradeList"),
+  pauseButton: document.getElementById("pauseButton"),
+  soundButton: document.getElementById("soundButton")
 };
 
 const assets = new AssetManager();
@@ -27,6 +36,15 @@ resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 game.start();
 
+const syncUi = () => {
+  if (game.state !== "menu") {
+    startScreen.classList.add("hidden");
+  }
+  requestAnimationFrame(syncUi);
+};
+
+requestAnimationFrame(syncUi);
+
 const beginGame = () => {
   if (!startScreen.classList.contains("hidden")) {
     startScreen.classList.add("hidden");
@@ -35,3 +53,23 @@ const beginGame = () => {
 };
 
 startButton.addEventListener("click", beginGame);
+
+document.getElementById("pauseButton").addEventListener("click", () => {
+  game.togglePause();
+});
+
+document.getElementById("soundButton").addEventListener("click", () => {
+  game.toggleSound();
+});
+
+document.getElementById("resetProgressButton").addEventListener("click", () => {
+  game.resetProgress();
+});
+
+document.getElementById("upgradeList").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-upgrade-id]");
+  if (!button) return;
+  const upgradeId = button.getAttribute("data-upgrade-id");
+  if (!upgradeId) return;
+  game.purchaseUpgrade(upgradeId);
+});

@@ -1,0 +1,11 @@
+{
+  "name": "sahur-jam-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js",
+    "check": "node --check server.js && node --check src/main.js && node --check src/game.js && node --check src/player.js && node --check src/station.js && node --check src/orderManager.js && node --check src/renderer.js && node --check src/particles.js && node --check src/audioManager.js && node --check src/assetManager.js && node --check src/recipes.js && node --check src/progression.js && node --check src/layouts/kitchenLayout.js && node --check src/config/gameConfig.js"
+  }
+}
