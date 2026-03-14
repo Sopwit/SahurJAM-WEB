@@ -3,10 +3,12 @@ import { GAME_CONFIG } from "./config/gameConfig.js";
 
 const STATION_ASSET = {
   ingredient: "stationIngredient",
+  fridge: "stationIngredient",
   stove: "stationStove",
   oven: "stationOven",
   chopping: "stationChopping",
   plating: "stationPlating",
+  prepTable: "stationPlating",
   service: "stationService",
   trash: "stationTrash"
 };
@@ -39,7 +41,7 @@ export class Renderer {
     return true;
   }
 
-  drawBackground(ctx) {
+  drawBackground(ctx, phase = "iftar") {
     ctx.imageSmoothingEnabled = false;
     const tile = 36;
     const { width, height } = this.canvas;
@@ -48,13 +50,14 @@ export class Renderer {
     const wallMidH = Math.floor(height * 0.18);
     const floorY = wallTopH + wallMidH;
 
+    const warmPhase = phase === "iftar";
     const wallGrad = ctx.createLinearGradient(0, 0, 0, wallTopH);
-    wallGrad.addColorStop(0, "#3c2c20");
-    wallGrad.addColorStop(1, "#2b1f17");
+    wallGrad.addColorStop(0, warmPhase ? "#5a3722" : "#243049");
+    wallGrad.addColorStop(1, warmPhase ? "#2b1f17" : "#1b2538");
     ctx.fillStyle = wallGrad;
     ctx.fillRect(0, 0, width, wallTopH);
 
-    ctx.fillStyle = "#5a3c2a";
+    ctx.fillStyle = warmPhase ? "#5a3c2a" : "#394866";
     ctx.fillRect(0, wallTopH, width, wallMidH);
 
     ctx.fillStyle = "#7b5539";
@@ -118,7 +121,7 @@ export class Renderer {
       ctx.closePath();
       ctx.fill();
 
-      ctx.fillStyle = "rgba(255, 223, 154, 0.2)";
+      ctx.fillStyle = warmPhase ? "rgba(255, 223, 154, 0.2)" : "rgba(170, 214, 255, 0.18)";
       ctx.beginPath();
       ctx.arc(lx, lampY + 28, 34, 0, Math.PI * 2);
       ctx.fill();
@@ -126,6 +129,9 @@ export class Renderer {
 
     ctx.fillStyle = "#4a3223";
     ctx.fillRect(0, floorY - 6, width, 6);
+
+    ctx.fillStyle = warmPhase ? "rgba(245, 185, 83, 0.08)" : "rgba(132, 184, 255, 0.08)";
+    ctx.fillRect(0, 0, width, height);
   }
 
   drawStation(ctx, station) {
@@ -186,6 +192,21 @@ export class Renderer {
       }
     }
 
+    if (station.type === "diningTable" && station.seatedOrder) {
+      ctx.fillStyle = "#f5ede0";
+      ctx.font = "18px serif";
+      ctx.textAlign = "center";
+      ctx.fillText("🧍", station.x + station.w / 2 - 18, station.y + station.h / 2 + 8);
+      ctx.fillText(station.seatedOrder.recipe.icon, station.x + station.w / 2 + 18, station.y + station.h / 2 + 8);
+    }
+
+    if (["prepTable", "diningTable", "fridge"].includes(station.type)) {
+      ctx.fillStyle = "#eadcc0";
+      ctx.font = "11px Georgia";
+      ctx.textAlign = "center";
+      ctx.fillText(station.label, station.x + station.w / 2, station.y + station.h - 8);
+    }
+
     ctx.restore();
   }
 
@@ -214,19 +235,19 @@ export class Renderer {
   }
 
   drawHUD(game) {
-    this.hud.score.textContent = `Skor: ${game.score}`;
+    this.hud.score.innerHTML = `<span class="hud-icon">🏆</span><span class="hud-label">Skor</span><strong>${game.score}</strong>`;
     this.hud.combo.textContent =
       game.comboCount > 1 ? `KOMBO x${game.comboMultiplier.toFixed(2)} (${game.comboCount})` : "";
 
     const sec = Math.max(0, Math.ceil(game.mainTimer / 1000));
     const mm = String(Math.floor(sec / 60)).padStart(2, "0");
     const ss = String(sec % 60).padStart(2, "0");
-    this.hud.timer.textContent = `${mm}:${ss}`;
+    this.hud.timer.innerHTML = `<span class="timer-label">Kalan Süre</span><strong>${mm}:${ss}</strong>`;
     this.hud.timer.style.color = sec < 30 ? "#ff5a3f" : "#e8c030";
 
     const phaseLeft = Math.max(0, Math.ceil((game.phaseDuration - game.phaseTimer) / 1000));
     const phaseCfg = this.config.cycle.phases[game.dayPhase] || this.config.cycle.phases.iftar;
-    this.hud.cycle.textContent = `DONGU: ${phaseCfg.label} (${phaseLeft}s)`;
+    this.hud.cycle.textContent = `DÖNGÜ: ${phaseCfg.label} (${phaseLeft}s)`;
     this.hud.cycle.style.color = phaseCfg.hudColor;
     if (this.hud.runStats) {
       this.hud.runStats.textContent = `Teslimat ${game.completedOrders}/${this.config.match.levelCompleteOrders} • Hurma ${game.hurma}`;
@@ -239,8 +260,10 @@ export class Renderer {
         const color = game.orderManager.getUrgencyColor(order);
         return `
           <div class="order-card">
-            <div class="order-title">${order.recipe.icon} ${order.recipe.name}</div>
-            <div class="order-meta">+${order.recipe.points} puan</div>
+            <div class="order-head">
+              <div class="order-title">${order.recipe.icon} ${order.recipe.name}</div>
+              <div class="order-meta">${order.tableId?.replace("table-", "Masa ")} • +${order.recipe.points}</div>
+            </div>
             <div class="order-bar-wrap">
               <div class="order-bar" style="width:${width}%;background:${color};"></div>
             </div>
@@ -254,18 +277,26 @@ export class Renderer {
     if (this.hud.controls) {
       this.hud.controls.textContent =
         game.state === "playing"
-          ? "WASD / Ok tuslari ile hareket et • E veya Bosluk ile etkilesim kur • Escape ile duraklat"
-          : "Enter veya buton ile baslat • R ile yeniden baslat • Escape ile ara ver";
+          ? "WASD / yön tuşları ile hareket et • E veya Boşluk ile etkileşime geç • Escape ile duraklat"
+          : "Enter veya buton ile başlat • R ile yeniden başlat • Tab ile menüyü aç";
     }
 
     if (this.hud.hurma) this.hud.hurma.textContent = String(game.progress.totalHurma);
     if (this.hud.highScore) this.hud.highScore.textContent = String(game.progress.highScore);
     if (this.hud.bestCombo) this.hud.bestCombo.textContent = `x${game.progress.bestCombo}`;
     if (this.hud.soundButton) {
-      this.hud.soundButton.textContent = game.progress.settings.soundEnabled ? "SES: ACIK" : "SES: KAPALI";
+      this.hud.soundButton.textContent = game.progress.settings.soundEnabled ? "SES: AÇIK" : "SES: KAPALI";
+    }
+    if (this.hud.animationsButton) {
+      this.hud.animationsButton.textContent = game.progress.settings.animationsEnabled ? "ANİMASYON: AÇIK" : "ANİMASYON: KAPALI";
+    }
+    if (this.hud.hintsButton) {
+      this.hud.hintsButton.textContent = game.progress.settings.showHints ? "YARDIM METİNLERİ: AÇIK" : "YARDIM METİNLERİ: KAPALI";
     }
     if (this.hud.pauseButton) {
-      this.hud.pauseButton.textContent = game.state === "paused" ? "DEVAM ET" : "DURAKLAT";
+      const canPause = game.state === "playing" || game.state === "paused";
+      this.hud.pauseButton.disabled = !canPause;
+      this.hud.pauseButton.textContent = canPause ? (game.state === "paused" ? "DEVAM ET" : "DURAKLAT") : "OYUNU BAŞLAT";
     }
     if (this.hud.upgrades) {
       this.hud.upgrades.innerHTML = game
@@ -277,11 +308,11 @@ export class Renderer {
             <article class="upgrade-card ${upgrade.isMaxed ? "maxed" : ""}">
               <div class="upgrade-head">
                 <h3>${upgrade.name}</h3>
-                <span>Lv.${current}/${upgrade.maxLevel}</span>
+                <span>Sv.${current}/${upgrade.maxLevel}</span>
               </div>
               <p>${upgrade.description}</p>
               <button type="button" data-upgrade-id="${upgrade.id}" ${disabled ? "disabled" : ""}>
-                ${upgrade.isMaxed ? "Maksimum" : `${upgrade.nextCost} hurma ile al`}
+                ${upgrade.isMaxed ? "Tamamlandı" : `${upgrade.nextCost} hurma ile geliştir`}
               </button>
             </article>
           `;
@@ -294,7 +325,7 @@ export class Renderer {
       if (status) {
         this.hud.status.innerHTML = `
           <div class="status-card">
-            <div class="status-kicker">Iftar Vakti</div>
+            <div class="status-kicker">İftar Vakti</div>
             <h2>${status.title}</h2>
             <p>${status.subtitle}</p>
             <span>${status.action}</span>
@@ -318,7 +349,7 @@ export class Renderer {
       ctx.translate(ox, oy);
     }
 
-    this.drawBackground(ctx);
+    this.drawBackground(ctx, game.dayPhase);
 
     if (game.state === "menu") {
       this.drawMenu(ctx);
@@ -335,11 +366,11 @@ export class Renderer {
     game.particles.draw(ctx);
 
     if (game.state === "levelComplete") {
-      this.drawOverlay(ctx, "Seviye Tamamlandi", "Aferin! Enter ile devam");
+      this.drawOverlay(ctx, "Seviye Tamamlandı", "Yeni tur için Enter'a bas");
     }
 
     if (game.state === "gameOver") {
-      this.drawOverlay(ctx, "Oyun Bitti", `Skor: ${game.score} | R ile yeniden basla`);
+      this.drawOverlay(ctx, "Süre Doldu", `Skor: ${game.score} | R ile yeniden başla`);
     }
 
     ctx.restore();
@@ -347,7 +378,7 @@ export class Renderer {
   }
 
   drawMenu(ctx) {
-    this.drawOverlay(ctx, "Iftar Vakti", "Baslamak icin Enter | Hareket: WASD | Etkilesim: E/Space");
+    this.drawOverlay(ctx, "İftar Vakti", "Başlamak için Enter | Hareket: WASD | Etkileşim: E / Boşluk");
   }
 
   drawOverlay(ctx, title, subtitle) {

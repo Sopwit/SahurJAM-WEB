@@ -8,47 +8,94 @@
   </head>
   <body>
     <div id="gameContainer">
-      <aside id="metaPanel" class="meta-panel">
-        <div class="panel-section">
-          <div class="panel-kicker">Ilerleme</div>
+      <button id="panelToggle" class="panel-toggle" type="button" aria-controls="metaPanel" aria-expanded="false">
+        MENÜ
+      </button>
+      <div id="panelBackdrop" class="panel-backdrop" hidden></div>
+      <aside id="metaPanel" class="meta-panel" aria-hidden="true">
+        <div class="panel-topbar">
+          <div class="panel-title-wrap">
+            <div class="panel-kicker">Oyun Menüsü</div>
+            <strong>Kontrol Merkezi</strong>
+            <p>İlerlemeni takip et, güçlendirmeleri yönet ve oyunu kendi ritmine göre düzenle.</p>
+          </div>
+          <button id="panelClose" class="panel-close" type="button" aria-label="Paneli kapat">KAPAT</button>
+        </div>
+        <div class="panel-tabs" role="tablist" aria-label="Menü sekmeleri">
+          <button class="panel-tab is-active" type="button" data-panel-tab="progress" role="tab" aria-selected="true">İlerleme</button>
+          <button class="panel-tab" type="button" data-panel-tab="upgrades" role="tab" aria-selected="false">Yükseltmeler</button>
+          <button class="panel-tab" type="button" data-panel-tab="controls" role="tab" aria-selected="false">Kontroller</button>
+          <button class="panel-tab" type="button" data-panel-tab="settings" role="tab" aria-selected="false">Ayarlar</button>
+        </div>
+        <div class="panel-section is-active" data-panel-view="progress">
+          <div class="panel-kicker">İlerleme</div>
           <div class="meta-stats">
             <div class="meta-stat"><span>Hurma</span><strong id="hurmaCount">0</strong></div>
-            <div class="meta-stat"><span>En Yuksek Skor</span><strong id="highScore">0</strong></div>
-            <div class="meta-stat"><span>En Iyi Kombo</span><strong id="bestCombo">0</strong></div>
+            <div class="meta-stat"><span>En Yüksek Skor</span><strong id="highScore">0</strong></div>
+            <div class="meta-stat"><span>En İyi Kombo</span><strong id="bestCombo">0</strong></div>
           </div>
         </div>
-        <div class="panel-section">
-          <div class="panel-kicker">Yukseltmeler</div>
+        <div class="panel-section" data-panel-view="upgrades">
+          <div class="panel-kicker">Yükseltmeler</div>
           <div id="upgradeList" class="upgrade-list"></div>
         </div>
-        <div class="panel-section">
+        <div class="panel-section" data-panel-view="controls">
           <div class="panel-kicker">Kontroller</div>
           <div class="guide-list">
-            <div>WASD / Ok tuslari: hareket</div>
-            <div>E / Bosluk: etkilesim</div>
-            <div>Escape: duraklat</div>
-            <div>Dograma icin tusu basili tut</div>
+            <div>WASD / yön tuşları: hareket</div>
+            <div>E / Boşluk: istasyonla etkileşim</div>
+            <div>Escape: oyunu duraklat</div>
+            <div>Doğrama sırasında tuşu basılı tut</div>
           </div>
         </div>
-        <div class="panel-section panel-actions">
+        <div class="panel-section panel-actions" data-panel-view="settings">
+          <div class="panel-kicker">Ayarlar</div>
           <button id="pauseButton" type="button">DURAKLAT</button>
-          <button id="soundButton" type="button">SES: ACIK</button>
-          <button id="resetProgressButton" type="button">ILERLEMEYI SIFIRLA</button>
+          <button id="soundButton" type="button">SES: AÇIK</button>
+          <button id="animationsButton" type="button">ANİMASYON: AÇIK</button>
+          <button id="hintsButton" type="button">YARDIM METİNLERİ: AÇIK</button>
+          <button id="resetProgressButton" type="button">İLERLEMEYİ SIFIRLA</button>
         </div>
       </aside>
       <div id="startScreen" class="start-screen">
         <div class="start-bg"></div>
         <div class="start-overlay"></div>
+        <div class="start-orb start-orb-left"></div>
+        <div class="start-orb start-orb-right"></div>
         <div class="start-content">
-          <div class="start-tag">Cooking Management • Ramazan Special</div>
-          <h1 class="start-title">IFTAR<br />VAKTI</h1>
-          <p class="start-subtitle">Ezan calmadan once herkesi doyur</p>
-          <div class="start-features">
-            <span>🌴 Kalici hurma ekonomisi</span>
-            <span>⚡ Yukseltme sistemi</span>
-            <span>⏸ Pause ve ses ayarlari</span>
+          <div class="start-intro">
+            <span class="start-badge">Ramazan mutfak oyunu</span>
+            <div class="start-divider"></div>
+            <span class="start-badge subtle">Kısa tur • Yüksek tempo</span>
           </div>
-          <button id="startButton" class="start-button" type="button">OYUNA BASLA</button>
+          <h1 class="start-title">İFTAR<br />VAKTİ</h1>
+          <p class="start-subtitle">Ezan yaklaşırken mutfağı yönet, siparişleri yetiştir ve kalabalık sofrayı aksatmadan ayakta tut.</p>
+          <div class="start-features">
+            <span>🌙 İftar ve sahur arasında değişen tempo</span>
+            <span>🌴 Kalıcı hurma birikimi ve gelişim</span>
+            <span>⚡ Her turda daha verimli bir mutfak</span>
+          </div>
+          <div class="start-summary-grid">
+            <article class="start-card">
+              <strong>Akış</strong>
+              <p>Malzemeyi al, doğru istasyonda hazırla, siparişi gecikmeden servis et.</p>
+            </article>
+            <article class="start-card">
+              <strong>Hedef</strong>
+              <p>Komboyu koru, hurma topla ve sonraki tur için mutfağını güçlendir.</p>
+            </article>
+            <article class="start-card">
+              <strong>Kontroller</strong>
+              <p>WASD ile hareket et, E veya Boşluk ile etkileşime geç, Escape ile ara ver.</p>
+            </article>
+          </div>
+          <div class="start-cta-row">
+            <button id="startButton" class="start-button" type="button">SERVİSE BAŞLA</button>
+            <div class="start-note">
+              <span>8 siparişi tamamla</span>
+              <span>3 dakikalık tur</span>
+            </div>
+          </div>
         </div>
       </div>
       <canvas id="gameCanvas" width="900" height="600"></canvas>
@@ -56,7 +103,7 @@
         <div id="score">Skor: 0</div>
         <div id="combo"></div>
         <div id="timer">03:00</div>
-        <div id="cycle">DONGU: IFTAR</div>
+        <div id="cycle">DÖNGÜ: İFTAR</div>
         <div id="runStats"></div>
         <div id="orders"></div>
         <div id="controls"></div>

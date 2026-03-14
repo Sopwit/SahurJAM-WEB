@@ -45,6 +45,25 @@ export class ParticleSystem {
       return;
     }
 
+    if (type === "phaseWarm" || type === "phaseCool") {
+      const count = options.count || 10;
+      for (let i = 0; i < count; i += 1) {
+        this.particles.push({
+          type: "sparkle",
+          x: x + rand(-140, 140),
+          y: y + rand(-14, 14),
+          vx: rand(-40, 40),
+          vy: rand(-30, 20),
+          life: 800,
+          maxLife: 800,
+          size: rand(2, 5),
+          color: type === "phaseWarm" ? "#f3c66b" : "#9dd0ff",
+          alpha: 1
+        });
+      }
+      return;
+    }
+
     if (type === "popup" || type === "warning") {
       this.particles.push({
         type,

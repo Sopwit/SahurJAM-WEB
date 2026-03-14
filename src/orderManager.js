@@ -18,10 +18,20 @@ export class OrderManager {
     this.spawnMax = 20000;
     this.phaseTipMultiplier = 2.0;
     this.currentPhase = config.cycle.initialPhase;
+    this.diningTableIds = modifiers.diningTableIds || [];
 
     this.setCyclePhase(this.currentPhase);
     this.spawnOrder();
     this.resetSpawnCooldown();
+  }
+
+  setDiningTables(tableIds) {
+    this.diningTableIds = tableIds;
+  }
+
+  getAvailableTableId() {
+    const usedIds = new Set(this.activeOrders.map((order) => order.tableId).filter(Boolean));
+    return this.diningTableIds.find((id) => !usedIds.has(id)) || null;
   }
 
   resetSpawnCooldown() {
@@ -64,6 +74,8 @@ export class OrderManager {
 
   spawnOrder() {
     if (this.activeOrders.length >= this.maxOrders) return null;
+    const tableId = this.getAvailableTableId();
+    if (!tableId) return null;
 
     const recipeKeys = Object.keys(RECIPES);
     const key = recipeKeys[Math.floor(Math.random() * recipeKeys.length)];
@@ -71,6 +83,7 @@ export class OrderManager {
     const order = {
       id: this.nextId++,
       recipe,
+      tableId,
       timeLimit: Math.round(this.config.orders.timeLimitMs * this.orderTimeMultiplier),
       elapsed: 0,
       tipMultiplier: this.phaseTipMultiplier
@@ -80,9 +93,10 @@ export class OrderManager {
     return order;
   }
 
-  completeOrder(recipeKey) {
+  completeOrder(recipeKey, tableId = null) {
     const idx = this.activeOrders.findIndex((o) => {
       const foundKey = Object.keys(RECIPES).find((k) => RECIPES[k] === o.recipe);
+      if (tableId && o.tableId !== tableId) return false;
       return foundKey === recipeKey;
     });
 

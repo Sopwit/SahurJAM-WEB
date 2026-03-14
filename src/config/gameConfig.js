@@ -6,7 +6,7 @@ export const GAME_CONFIG = {
     minHeight: 520
   },
   player: {
-    radius: 14,
+    radius: 15,
     speed: 130,
     interactRange: 40,
     spawnX: 420,
@@ -53,6 +53,10 @@ export const GAME_CONFIG = {
   },
   progress: {
     storageKey: "iftar-vakti-progress"
+  },
+  settings: {
+    defaultAnimationsEnabled: true,
+    defaultShowHints: true
   },
   economy: {
     hurmaPerOrder: 10

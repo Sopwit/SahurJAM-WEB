@@ -14,7 +14,9 @@ export function createDefaultProgress(config) {
     totalHurma: 0,
     lifetimeHurma: 0,
     settings: {
-      soundEnabled: true
+      soundEnabled: true,
+      animationsEnabled: config.settings?.defaultAnimationsEnabled ?? true,
+      showHints: config.settings?.defaultShowHints ?? true
     },
     upgrades
   };

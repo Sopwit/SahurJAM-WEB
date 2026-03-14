@@ -75,6 +75,8 @@ export class Game {
       this.notify(msg);
     }, config, this.getOrderModifiers());
     this.orderManager.setCyclePhase(this.dayPhase);
+    this.orderManager.setDiningTables(this.getDiningTableIds());
+    this.syncDiningTables();
 
     this.notificationTimer = 0;
     this.lastTime = 0;
@@ -87,12 +89,25 @@ export class Game {
   getOrderModifiers() {
     return {
       maxOrders: this.config.orders.maxActive,
-      orderTimeMultiplier: this.upgradeEffects.orderTimeMultiplier
+      orderTimeMultiplier: this.upgradeEffects.orderTimeMultiplier,
+      diningTableIds: this.getDiningTableIds()
     };
+  }
+
+  getDiningTables() {
+    return this.stations.filter((station) => station.type === "diningTable");
+  }
+
+  getDiningTableIds() {
+    return this.getDiningTables()
+      .map((station) => station.tableId)
+      .filter(Boolean);
   }
 
   applySettings() {
     this.audio.enabled = this.progress.settings.soundEnabled;
+    document.body.classList.toggle("reduced-motion", !this.progress.settings.animationsEnabled);
+    document.body.classList.toggle("hide-hints", !this.progress.settings.showHints);
   }
 
   persistProgress() {
@@ -109,6 +124,7 @@ export class Game {
     if (this.orderManager) {
       this.orderManager.maxOrders = this.config.orders.maxActive;
       this.orderManager.orderTimeMultiplier = this.upgradeEffects.orderTimeMultiplier;
+      this.orderManager.setDiningTables(this.getDiningTableIds());
     }
   }
 
@@ -141,23 +157,23 @@ export class Game {
 
   purchaseUpgrade(id) {
     if (!["menu", "paused", "gameOver", "levelComplete"].includes(this.state)) {
-      return { success: false, message: "Yukseltmeler icin oyunu duraklat" };
+      return { success: false, message: "Yükseltme yapmak için oyunu duraklat" };
     }
 
     const upgrade = this.config.upgrades.catalog.find((item) => item.id === id);
-    if (!upgrade) return { success: false, message: "Yukseltme bulunamadi" };
+    if (!upgrade) return { success: false, message: "Yükseltme bulunamadı" };
 
     const currentLevel = this.progress.upgrades[id] || 0;
     const nextLevel = upgrade.levels[currentLevel];
-    if (!nextLevel) return { success: false, message: "Bu yukseltme zaten maksimum" };
-    if (this.progress.totalHurma < nextLevel.cost) return { success: false, message: "Yetersiz hurma" };
+    if (!nextLevel) return { success: false, message: "Bu yükseltme zaten tamamlandı" };
+    if (this.progress.totalHurma < nextLevel.cost) return { success: false, message: "Yeterli hurman yok" };
 
     this.progress.totalHurma -= nextLevel.cost;
     this.progress.upgrades[id] = currentLevel + 1;
     this.refreshUpgradeEffects();
     this.persistProgress();
-    this.notify(`${upgrade.name} Lv.${currentLevel + 1} oldu`);
-    return { success: true, message: `${upgrade.name} gelistirildi` };
+    this.notify(`${upgrade.name} seviye ${currentLevel + 1} oldu`);
+    return { success: true, message: `${upgrade.name} geliştirildi` };
   }
 
   resetProgress() {
@@ -165,7 +181,24 @@ export class Game {
     this.applySettings();
     this.refreshUpgradeEffects();
     this.persistProgress();
-    this.notify("Kayitli ilerleme sifirlandi");
+    this.notify("Kayıtlı ilerleme sıfırlandı");
+    return { success: true, message: "Kayıtlı ilerleme sıfırlandı" };
+  }
+
+  toggleAnimations() {
+    this.progress.settings.animationsEnabled = !this.progress.settings.animationsEnabled;
+    this.applySettings();
+    this.persistProgress();
+    this.notify(this.progress.settings.animationsEnabled ? "Arayuz animasyonlari acildi" : "Arayuz animasyonlari kapatildi");
+    return { success: true };
+  }
+
+  toggleHints() {
+    this.progress.settings.showHints = !this.progress.settings.showHints;
+    this.applySettings();
+    this.persistProgress();
+    this.notify(this.progress.settings.showHints ? "Yardim metinleri gorunur" : "Yardim metinleri gizlendi");
+    return { success: true };
   }
 
   toggleSound() {
@@ -175,22 +208,24 @@ export class Game {
     if (this.progress.settings.soundEnabled) {
       this.audio.playMenuStart();
     }
+    this.notify(this.progress.settings.soundEnabled ? "Ses açıldı" : "Ses kapatıldı");
+    return { success: true, message: this.progress.settings.soundEnabled ? "Ses açıldı" : "Ses kapatıldı" };
   }
 
   togglePause() {
     if (this.state === "playing") {
       this.state = "paused";
-      this.notify("Oyun duraklatildi");
-      return true;
+      this.notify("Oyun duraklatıldı");
+      return { success: true, paused: true, message: "Oyun duraklatıldı" };
     }
 
     if (this.state === "paused") {
       this.state = "playing";
       this.notify("Oyun devam ediyor");
-      return true;
+      return { success: true, paused: false, message: "Oyun devam ediyor" };
     }
 
-    return false;
+    return { success: false, paused: false, message: "Duraklatmak için önce oyunu başlat" };
   }
 
   getPhaseConfig(phase = this.dayPhase) {
@@ -201,24 +236,24 @@ export class Game {
     if (this.state === "levelComplete") {
       return {
         title: "SERVIS TAMAMLANDI",
-        subtitle: `Skor ${this.score} • ${this.completedOrders} siparis teslim edildi • ${this.hurma} hurma`,
-        action: "Tekrar oynamak icin Enter veya R"
+        subtitle: `Skor ${this.score} • ${this.completedOrders} sipariş teslim edildi • ${this.hurma} hurma`,
+        action: "Yeniden oynamak için Enter veya R"
       };
     }
 
     if (this.state === "paused") {
       return {
         title: "DURAKLATILDI",
-        subtitle: `Skor ${this.score} • ${this.completedOrders} siparis • ${this.hurma} hurma`,
-        action: "Devam icin Esc veya paneldeki tusu kullan"
+        subtitle: `Skor ${this.score} • ${this.completedOrders} sipariş • ${this.hurma} hurma`,
+        action: "Devam etmek için Escape veya panel düğmesini kullan"
       };
     }
 
     if (this.state === "gameOver") {
       return {
         title: "VAKIT DOLDU",
-        subtitle: `Skor ${this.score} • ${this.completedOrders} siparis tamamlandi • ${this.hurma} hurma`,
-        action: "Yeniden baslatmak icin Enter veya R"
+        subtitle: `Skor ${this.score} • ${this.completedOrders} sipariş tamamlandı • ${this.hurma} hurma`,
+        action: "Yeniden başlatmak için Enter veya R"
       };
     }
 
@@ -270,6 +305,13 @@ export class Game {
       const def = this.layoutDef[i];
       const mapped = this.mapLayoutRect(def);
       station.setRect(mapped.x, mapped.y, mapped.w, mapped.h);
+    }
+  }
+
+  syncDiningTables() {
+    const orderByTableId = new Map(this.orderManager.activeOrders.map((order) => [order.tableId, order]));
+    for (const station of this.getDiningTables()) {
+      station.seatedOrder = orderByTableId.get(station.tableId) || null;
     }
   }
 
@@ -371,6 +413,8 @@ export class Game {
       this.notify(msg);
     }, this.config, this.getOrderModifiers());
     this.orderManager.setCyclePhase(this.dayPhase);
+    this.orderManager.setDiningTables(this.getDiningTableIds());
+    this.syncDiningTables();
 
     this.notify(this.getPhaseConfig().notify);
   }
@@ -381,6 +425,7 @@ export class Game {
       this.phaseTimer = 0;
       this.dayPhase = this.dayPhase === "iftar" ? "sahur" : "iftar";
       this.orderManager.setCyclePhase(this.dayPhase);
+      this.particles.emit(this.dayPhase === "iftar" ? "phaseWarm" : "phaseCool", this.worldW * 0.5, 64, { count: 12 });
       this.notify(this.getPhaseConfig().notify);
     }
   }
@@ -444,7 +489,7 @@ export class Game {
 
       this.notify(`Harika servis! +${totalAward} puan • +${hurmaGain} hurma`);
 
-      const service = this.stations.find((s) => s.type === "service");
+      const service = this.stations.find((s) => s.tableId === result.served.order.tableId) || this.stations.find((s) => s.type === "prepTable");
       if (service) {
         const sx = service.x + service.w / 2;
         const sy = service.y + service.h / 2;
@@ -467,6 +512,8 @@ export class Game {
         this.finalizeRunProgress();
         this.notify("Seviye tamamlandi!");
       }
+
+      this.syncDiningTables();
     }
 
     return true;
@@ -586,6 +633,7 @@ export class Game {
     this.updateStations(delta, holdChopStation);
 
     this.orderManager.update(delta);
+    this.syncDiningTables();
     this.particles.update(delta);
 
     this.mainTimer -= delta;

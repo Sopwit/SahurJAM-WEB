@@ -29,6 +29,12 @@ function distanceSq(ax, ay, bx, by) {
   return dx * dx + dy * dy;
 }
 
+function pointToRectDistanceSq(px, py, rect) {
+  const dx = px < rect.x ? rect.x - px : px > rect.x + rect.w ? px - (rect.x + rect.w) : 0;
+  const dy = py < rect.y ? rect.y - py : py > rect.y + rect.h ? py - (rect.y + rect.h) : 0;
+  return dx * dx + dy * dy;
+}
+
 function recipeKeyFromRecipe(recipe) {
   return Object.keys(RECIPES).find((k) => RECIPES[k] === recipe) || null;
 }
@@ -82,8 +88,8 @@ export class Player {
   }
 
   isNearStation(station, customRange = this.interactRange) {
-    const c = getStationCenter(station);
-    return distanceSq(this.x, this.y, c.x, c.y) <= customRange * customRange;
+    const box = station.getInteractBox();
+    return pointToRectDistanceSq(this.x, this.y, box) <= customRange * customRange;
   }
 
   getNearestStation(stations, customRange = this.interactRange) {
@@ -91,8 +97,7 @@ export class Player {
     let nearestD = Infinity;
 
     for (const station of stations) {
-      const c = getStationCenter(station);
-      const d = distanceSq(this.x, this.y, c.x, c.y);
+      const d = pointToRectDistanceSq(this.x, this.y, station.getInteractBox());
       if (d < nearestD) {
         nearestD = d;
         nearest = station;
@@ -106,11 +111,13 @@ export class Player {
   getInteractionPriority(station) {
     if (!this.heldItem) {
       if (station.item && ["has_item", "done", "burnt"].includes(station.state)) return 100;
-      if (station.type === "ingredient") return 80;
+      if (["ingredient", "fridge"].includes(station.type)) return 80;
+      if (station.type === "diningTable" && station.seatedOrder) return 40;
       return 0;
     }
 
-    if (station.type === "service") return 120;
+    if (station.type === "diningTable" && station.seatedOrder) return 120;
+    if (station.type === "prepTable" && !station.item && this.heldItem.recipeKey) return 100;
     if (station.type === "trash") return 20;
     if (station.item) return 0;
 
@@ -128,8 +135,7 @@ export class Player {
 
     for (const station of stations) {
       if (!this.isNearStation(station)) continue;
-      const c = getStationCenter(station);
-      const d = Math.sqrt(distanceSq(this.x, this.y, c.x, c.y));
+      const d = Math.sqrt(pointToRectDistanceSq(this.x, this.y, station.getInteractBox()));
       const priority = this.getInteractionPriority(station);
       const score = priority - d * 0.1;
       if (score > bestScore) {
@@ -146,7 +152,7 @@ export class Player {
     if (!station) return { message: "", didInteract: false };
 
     if (!this.heldItem) {
-      if (station.type === "ingredient") {
+      if (["ingredient", "fridge"].includes(station.type)) {
         const possibleItems = station.ingredientItems;
         const urgent = orderManager.activeOrders
           .map((o) => o.recipe.steps[0].item)
@@ -180,6 +186,10 @@ export class Player {
         return { message: `${this.heldItem.icon || "🍽"} alindi`, didInteract: true };
       }
 
+      if (station.type === "diningTable" && station.seatedOrder) {
+        return { message: `${station.label} siparis bekliyor`, didInteract: true };
+      }
+
       return { message: "", didInteract: false };
     }
 
@@ -188,14 +198,27 @@ export class Player {
       return { message: "Cop kutusuna atildi", didInteract: true };
     }
 
-    if (station.type === "service") {
+    if (station.type === "diningTable") {
+      if (!station.seatedOrder) return { message: "Bu masada bekleyen kimse yok", didInteract: true };
       if (!this.heldItem.recipeKey) return { message: "Bu siparisle eslesmiyor", didInteract: true, fail: true };
 
-      const result = orderManager.completeOrder(this.heldItem.recipeKey);
+      const result = orderManager.completeOrder(this.heldItem.recipeKey, station.tableId);
       if (!result.success) return { message: "Yanlis servis", didInteract: true, fail: true };
 
       this.heldItem = null;
-      return { message: `Servis basarili +${result.total}`, served: result, didInteract: true };
+      station.seatedOrder = null;
+      return { message: `${station.label} servis edildi +${result.total}`, served: result, didInteract: true };
+    }
+
+    if (station.type === "prepTable") {
+      if (!this.heldItem.recipeKey) {
+        return { message: "Stok masalarina sadece hazir yemek koyabilirsin", didInteract: true, fail: true };
+      }
+      if (station.item) return { message: "Bu stok masasi dolu", didInteract: true };
+      station.item = this.heldItem;
+      station.state = "done";
+      this.heldItem = null;
+      return { message: `${station.label} uzerine stoklandi`, didInteract: true };
     }
 
     if (station.item) return { message: "Bu istasyon dolu", didInteract: true };
