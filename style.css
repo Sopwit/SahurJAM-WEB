@@ -28,6 +28,89 @@ body {
   height: 100vh;
 }
 
+.start-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.start-screen.hidden {
+  display: none;
+}
+
+.start-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("https://images.unsplash.com/photo-1773314863076-835e0bdbe3ea?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1600");
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.06);
+}
+
+.start-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(13, 7, 5, 0.92) 0%, rgba(26, 15, 8, 0.86) 50%, rgba(13, 7, 5, 0.94) 100%);
+}
+
+.start-content {
+  position: relative;
+  text-align: center;
+  color: #f5ede0;
+  padding: 24px;
+}
+
+.start-tag {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(245, 200, 66, 0.5);
+  background: rgba(245, 200, 66, 0.12);
+  color: #f5c842;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.start-title {
+  margin: 0;
+  font-size: clamp(64px, 14vw, 170px);
+  line-height: 0.9;
+  letter-spacing: 0.05em;
+  color: #f5ede0;
+  text-shadow: 0 0 50px rgba(245, 200, 66, 0.7), 0 10px 24px rgba(0, 0, 0, 0.8);
+}
+
+.start-subtitle {
+  margin: 16px 0 28px;
+  font-size: clamp(20px, 3vw, 40px);
+  color: #f5c842;
+}
+
+.start-button {
+  border: 3px solid #c8622a;
+  border-radius: 14px;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, rgba(200, 98, 42, 0.55), rgba(200, 98, 42, 0.2));
+  color: #f5ede0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(22px, 3vw, 40px);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow: 0 0 45px rgba(200, 98, 42, 0.55), 0 12px 24px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.start-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 55px rgba(245, 200, 66, 0.6), 0 14px 28px rgba(0, 0, 0, 0.6);
+}
+
 canvas {
   display: block;
   width: 100%;
