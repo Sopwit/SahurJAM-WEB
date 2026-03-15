@@ -173,10 +173,6 @@ export class AudioManager {
     this.tone({ frequency: 620, duration: 0.05, type: "square", gain: 0.02, slideTo: 560 });
   }
 
-  playServe() {
-    this.playOrderSuccess();
-  }
-
   playFail() {
     this.tone({ frequency: 220, duration: 0.16, type: "sawtooth", gain: 0.035, slideTo: 160 });
   }

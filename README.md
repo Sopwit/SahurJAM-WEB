@@ -1,14 +1,6 @@
 # Ramadan Looper
 
-Canvas tabanli kisa sureli bir mutfak yonetim oyunu. Oyuncu iftar ve sahur dongusu arasinda yemekleri dolaptan alip firinda isitir ve masalara servis eder.
-
-## Ozellikler
-
-- Iftar ve sahur fazlarina gore degisen siparis temposu
-- Kalici hurma para birimi ve yukseltme sistemi
-- High score ve en iyi kombo kaydi
-- Pause, ses ac/kapat ve oyun ici yardim paneli
-- Yerel asset'lerle calisan bagimsiz acilis ekrani
+Ramazan temali, canvas tabanli bir mutfak ve servis oyunu. Oyuncu yemekleri dolaptan alir, firinda isitir ve dogru masalara yetistirerek seviyeleri tamamlar.
 
 ## Calistirma
 
@@ -18,50 +10,59 @@ npm start
 
 Ardindan `http://127.0.0.1:3000` adresini ac.
 
+## Oynanis Ozeti
+
+- Her seviyenin kendine ait suresi ve minimum teslimat hedefi vardir.
+- Tur iki faza bolunur: `iftar` ve `sahur`.
+- Yemekler servisten once firinda isitilmak zorundadir.
+- Hedef teslimat sayisi tutmazsa seviye basarisiz olur.
+- Seviye ilerledikce tarif havuzu, tempo ve zorluk artar.
+
 ## Kontroller
 
-- `WASD` veya ok tuslari: hareket
+- `WASD` veya yon tuslari: hareket
 - `E` veya `Bosluk`: etkilesim
-- `Enter`: baslat
-- `R`: oyun bittiğinde yeniden baslat
+- `Enter`: baslat, tutorial gec, sonraki seviyeye ilerle
+- `R`: seviyeyi veya oyunu yeniden baslat
+- `Escape`: duraklat veya devam ettir
+- `Tab`: sag panel menuyu ac veya kapat
+- `T`: `ramazan.mp3` sesini cal
 
-## Proje Durumu
+## Sistemler
 
-- Kök dizindeki oyun calisir durumda.
-- `kapak-ekrani/` ayri bir prototip arayuz; ana oyuna bagli degil ve bu akisa entegre edilmis degil.
+- Kalici hurma ekonomisi ve gelisim sistemi
+- High score ve en iyi kombo kaydi
+- Sag panel uzerinden durum, gelisim, tuslar ve ayarlar
+- Tutorial overlay ve otomatik baslama sayaci
+- Faz bazli sesler: sahur dongusu, firin pisirme, siparis basarisi
 
-## Bu Turde Yapilan Iyilestirmeler
+## Klasor Yapisi
 
-- Iftar ve sahur fazlarina gore siparis spawn hizi ve bahsis katsayisi aktif hale getirildi.
-- Oyun sonu ve seviye tamamlama durumlari icin durum ekrani eklendi.
-- Kontrol yonlendirmeleri HUD'a eklendi.
-- Acilis ekranindaki harici gorsel bagimliligi kaldirildi.
-- Yerel statik sunucu ve `npm` scriptleri eklendi.
-- Kalici ilerleme, hurma ekonomisi ve yukseltmeler eklendi.
-- Pause, ses ayari ve sag panel uzerinden oyun ici kontrol katmani eklendi.
-- Her seviye icin yeni tarif acilimi eklendi.
-- Yeni yemekler icin yerel SVG asset'ler eklendi.
+- `src/`: oyunun calisan kaynak kodu
+- `assets/`: gorseller ve sprite dosyalari
+- `audio/`: oyun ici ses dosyalari
+- `main/`: ayri prototip arayuz dosyalari, calisan ana oyuna bagli degil
 
 ## Smoke Test
 
-1. Baslangic ekrani
-   - `SERVISE BASLA` butonu oyunu baslatir.
-   - `Tab` ile menu paneli acilir.
-   - Baslangic metinleri tek panelde okunur ve mobilde tasmaz.
-2. Menu ve ayarlar
-   - `Yukseltmeler` sekmesindeki her kart tiklanir.
-   - Yeterli hurma varsa seviye artar ve bildirim cikar.
-   - `Ses`, `Animasyon`, `Yardim Metinleri`, `Duraklat` butonlari durum degistirir.
-3. Mutfak etkilesimi
-   - Buzdolabindan yemek alin.
-   - Firinda yeterli sure isitilir.
-   - Isinan yemek dogru masaya servis edilir.
-4. Masa servisi
-   - Siparis cikan masaya dogru yemek goturulur.
-   - Dogru serviste skor ve hurma artar.
-   - Yanlis serviste hata bildirimi gelir.
-5. Seviye akisi
-   - Her seviyede sure farklidir ve iki faza bolunur: `iftar` ve `sahur`.
-   - Seviye sonunda hedef teslimat tamamlanmadiysa seviye basarisiz olur.
-   - `Enter` ile sonraki seviye veya yeniden deneme baslar.
-   - Ust seviyelerde sure, hedef ve tempo degisir.
+1. Baslangic ve tutorial
+- Ana ekranda `OYUNU BASLAT` butonu calisir.
+- Tutorial butonlari fare ile tiklanabilir.
+- Tutorial 5 saniye sonra otomatik kapanir.
+
+2. Mutfak akisi
+- Dolaptan bir yemek al.
+- Firina birak ve isitma bitmeden servis etmeye calis.
+- `Bu yemek once isitilmali...` uyarisi gorunmeli.
+- Isinmis urunu alip dogru masaya servis et.
+
+3. Menu ve gelisim
+- `Tab` ile paneli ac.
+- `Gelisim` sekmesinde yeterli hurma varsa seviye artmali.
+- `Durum` sekmesindeki istatistikler guncellenmeli.
+
+4. Ses
+- `T` tusu tam `ramazan.mp3` dosyasini calar.
+- Sahur fazinda `sahur.wav` devreye girer.
+- Firinda islem varken `yemek-pisme.wav` loop calar.
+- Basarili serviste `siparis-ok.wav` calar.
