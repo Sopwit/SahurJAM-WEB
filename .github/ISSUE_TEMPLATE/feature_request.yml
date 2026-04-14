@@ -1,0 +1,25 @@
+name: Feature Request
+description: Yeni özellik veya iyileştirme öner
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / İhtiyaç
+      description: Hangi eksikliği çözmek istediğinizi yazın.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Önerilen Çözüm
+      description: Ne yapılmasını önerdiğinizi yazın.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Ek Notlar
+      description: Gerekirse ekran görüntüsü, referans veya kapsam notu ekleyin.
