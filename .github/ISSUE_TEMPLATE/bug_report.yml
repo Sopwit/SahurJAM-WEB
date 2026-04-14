@@ -1,0 +1,41 @@
+name: Bug Report
+description: Oyun ya da repo davranışında hatalı bir durum bildir
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Özet
+      description: Sorunu kısa ve net anlatın.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Tekrarlama Adımları
+      description: Hatanın nasıl tekrarlandığını adım adım yazın.
+      placeholder: |
+        1. Oyunu aç
+        2. ...
+        3. Hata oluşuyor
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Beklenen Davranış
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Gerçekleşen Davranış
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Ortam
+      description: Tarayıcı, işletim sistemi veya cihaz bilgisi

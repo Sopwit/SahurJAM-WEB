@@ -2,10 +2,7 @@ import { Play } from 'lucide-react';
 
 export function MainScreen() {
   const handlePlay = () => {
-    // Buraya oyununuzun URL'sini ekleyin
-    window.location.href = 'https://your-game-url.com';
-    // veya
-    // window.open('https://your-game-url.com', '_blank');
+    window.location.href = './';
   };
 
   return (

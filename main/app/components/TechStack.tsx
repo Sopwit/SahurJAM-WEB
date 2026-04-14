@@ -47,8 +47,9 @@ export function TechStack() {
 
             <ul className="space-y-3">
               {[
-                'Phaser 3 / Vanilla Canvas',
-                'Vite (Build Tool)',
+                'Vanilla JavaScript',
+                'Native ES Modules',
+                'Node.js Static Server',
                 'JavaScript (ES6+)',
                 'CSS3 Animasyonlar',
                 'HTML5 Canvas API',
@@ -71,7 +72,6 @@ export function TechStack() {
             </ul>
           </div>
 
-          {/* GitHub placeholder */}
           <div
             className="p-6 rounded-lg border"
             style={{
@@ -104,7 +104,7 @@ export function TechStack() {
             </p>
 
             <a
-              href="https://github.com/yourusername/ramadan-looper"
+              href="https://github.com/Sopwit/SahurJAM-WEB"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border-2 transition-all duration-300 hover:scale-105"
@@ -117,7 +117,7 @@ export function TechStack() {
               }}
             >
               <Github className="w-5 h-5" />
-              GitHub Repository
+              GitHub Repo
             </a>
           </div>
         </div>
